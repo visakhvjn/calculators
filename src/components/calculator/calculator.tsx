@@ -1,39 +1,69 @@
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
-import { FixedDepositCalculator } from '../fixed deposit calculator/fixed-deposit-calculator.component';
 import {Block} from 'baseui/block'
 import { Input } from "baseui/input";
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { TreeView, TreeNodeData, toggleIsExpanded } from "baseui/tree-view";
+import { allCalculators } from './data';
 
 export function Calculators() {
+    const getLabel = (label: string, path: string) => () => {
+        return (
+          <Link to={path}>
+              {label}
+          </Link>
+        );
+      };
 
-    const calculators = [
-        { name: 'Fixed Deposit', path: '/calculator1', element: FixedDepositCalculator },
-      ];
+    const [calculatorTypes, setCalculatorTypes] = useState<TreeNodeData[]>([]);
+
+    const loadCalculators = () => {
+        const types = allCalculators.map<TreeNodeData>((calculators) => (
+            {
+                id: calculators.id,
+                label: calculators.label,
+                isExpanded: calculators.isExpanded,
+                children: calculators.children.map((calculator) => (
+                    { id: calculator.id, label: getLabel(calculator.label, calculator.path)}
+                ))
+            }
+        ));
+
+        setCalculatorTypes(types);
+    }
+
+    useEffect(() => {
+        loadCalculators();
+    }, [])
 
     const [value, setValue] = React.useState("");
 
     return (
         <BrowserRouter>
             <Block style={{ display: 'flex' }}>
-                <Block style={{ flex: '1', padding: '2%', backgroundColor: 'grey' }}>
-                    <Input
-                        value={value}
-                        onChange={e => setValue(e.target.value)}
-                        placeholder="Search"
-                        clearOnEscape
-                    />
-                    <ul>
-                        {calculators.map((calculator, index) => (
-                        <li key={index}>
-                            <Link to={calculator.path}>{calculator.name}</Link>
-                        </li>
-                        ))}
-                    </ul>
+                <Block style={{ flex: '1', padding: '2%' }}>
+                    <Block>
+                        <Input
+                            value={value}
+                            onChange={e => setValue(e.target.value)}
+                            placeholder="Search"
+                            clearOnEscape
+                        />
+                    </Block>
+                    <Block style={{ marginTop: '5%'}}>
+                        <TreeView
+                            data={calculatorTypes}
+                            indentGuides
+                            onToggle={(node) => setCalculatorTypes((prevData) => toggleIsExpanded(prevData, node))}
+                        />
+                    </Block>
                 </Block>
-                <Block style={{ flex: '5', paddingLeft: '2%', paddingRight: '2%' }}>
+                <Block style={{ flex: '4', paddingLeft: '2%', paddingRight: '2%' }}>
                     <Routes>
-                        {calculators.map((calculator, index) => (
-                            <Route key={index} path={calculator.path} element={<calculator.element />} />
+                        {allCalculators.map((calculators, index) => (
+                            calculators.children?.map((calculator) => (
+                                <Route key={index} path={calculator.path} element={<calculator.element />} />
+                            ))
+                        
                         ))}
                     </Routes>
                 </Block>
